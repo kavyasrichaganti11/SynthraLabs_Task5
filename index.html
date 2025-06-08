@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Weather Dashboard</title>
+</head>
+<body style="margin: 0; font-family: Arial, sans-serif; background: #f0f0f0;">
+
+  <div style="display: flex; height: 100vh;">
+
+    <!-- Left Panel -->
+    <div style="flex: 1; background: url('weatherapp.jpg') center/cover no-repeat; color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 30px;">
+      <h1 style="font-size: 48px; margin: 0;background-color: white;color: black;">Weather App</h1>
+      <p style="font-size: 24px;background-color: #ccc;color: black;">Check real-time weather updates</p>
+    </div>
+
+    <!-- Right Panel -->
+    <div style="flex: 1.2; background: #4c81ac; padding: 40px; overflow-y: auto;">
+
+      <!-- Search Section -->
+      <div style="margin-bottom: 20px;">
+        <input type="text" id="cityInput" placeholder="Enter city or ZIP code" style="width: 70%; padding: 12px 16px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px;">
+        <button onclick="getWeather()" style="padding: 12px 20px; font-size: 16px; margin-left: 10px; background-color: #f4f36f; color: black; border: none; border-radius: 4px; cursor: pointer;">Search</button>
+      </div>
+
+      <!-- Current Weather Display -->
+      <div id="weatherDisplay" style="margin-top: 20px; font-size: 18px;"></div>
+
+      <!-- 5-Day Forecast Display -->
+      <div id="forecastDisplay" style="margin: 30px;">
+        <h2 style="margin-bottom: 15px;">5-Day Forecast</h2>
+        <div id="forecastCards" style="display: flex; flex-wrap: wrap; gap: 16px; "></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- JavaScript -->
+  <script>
+    async function getWeather() {
+      const city = document.getElementById("cityInput").value.trim();
+      const apiKey = '6d57f49457e8c333909cc7eeac7c91ee'; // Replace with your OpenWeatherMap API key
+
+      try {
+        // Current weather
+        const currentUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
+        const currentRes = await fetch(currentUrl);
+        if (!currentRes.ok) throw new Error("Location not found");
+        const currentData = await currentRes.json();
+
+        // Update current weather
+        const display = document.getElementById("weatherDisplay");
+        display.innerHTML = `
+          <p><strong>City:</strong> ${currentData.name}</p>
+          <p><strong>Temperature:</strong> ${currentData.main.temp} °C</p>
+          <p><strong>Humidity:</strong> ${currentData.main.humidity} %</p>
+          <p><strong>Wind Speed:</strong> ${currentData.wind.speed} m/s</p>
+          <p><img src="https://openweathermap.org/img/wn/${currentData.weather[0].icon}@2x.png" alt="weather icon"></p>
+        `;
+
+        // 5-day forecast
+        const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}&units=metric`;
+        const forecastRes = await fetch(forecastUrl);
+        if (!forecastRes.ok) throw new Error("Forecast data not found");
+        const forecastData = await forecastRes.json();
+
+        const forecastCards = document.getElementById("forecastCards");
+        forecastCards.innerHTML = "";
+
+        // Filter one forecast per day (every 24h, 12:00)
+        const dailyForecasts = forecastData.list.filter(forecast => forecast.dt_txt.includes("12:00:00"));
+
+        dailyForecasts.forEach(day => {
+          const date = new Date(day.dt_txt);
+          const card = document.createElement("div");
+          card.style.cssText = "background: #87c4f5; padding: 15px; border-radius: 8px; width: 130px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center;";
+
+          card.innerHTML = `
+            <p style="font-weight: bold;">${date.toDateString().split(' ').slice(0, 3).join(' ')}</p>
+            <img src="https://openweathermap.org/img/wn/${day.weather[0].icon}@2x.png" alt="icon" style="width: 60px; height: 60px;">
+            <p>${day.main.temp} °C</p>
+            <p style="font-size: 12px;">${day.weather[0].main}</p>
+          `;
+          forecastCards.appendChild(card);
+        });
+
+      } catch (err) {
+        document.getElementById("weatherDisplay").innerHTML = `<p style="color:red;">${err.message}</p>`;
+        document.getElementById("forecastCards").innerHTML = "";
+      }
+    }
+  </script>
+
+</body>
+</html>
